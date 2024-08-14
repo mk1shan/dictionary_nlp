@@ -1,23 +1,84 @@
-import logo from './logo.svg';
-import './App.css';
+import React, { useState } from "react";
+import Axios from "axios";
+import "./App.css";
+import { FaSearch } from "react-icons/fa";
+import { FcSpeaker } from "react-icons/fc";
 
 function App() {
+  const [data, setData] = useState("");
+  const [searchWord, setSearchWord] = useState("");
+
+  // Fetch meaning of the word
+  function getMeaning() {
+    Axios.get(
+      `https://api.dictionaryapi.dev/api/v2/entries/en_US/${searchWord}`
+    ).then((response) => {
+      setData(response.data[0]);
+    });
+  }
+
+  // Play pronunciation audio
+  function playAudio() {
+    let audio = new Audio(data.phonetics[0].audio);
+    audio.play();
+  }
+
+  // Play definition using VoiceRSS TTS API
+  function playDefinition(definitionText) {
+    const apiKey = "8d902a2a09a34827ab3e285846aca268"; // Replace with your VoiceRSS API key
+    const audioUrl = `https://api.voicerss.org/?key=${apiKey}&hl=en-us&src=${encodeURIComponent(definitionText)}`;
+
+    let audio = new Audio(audioUrl);
+    audio.play();
+  }
+
   return (
     <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
+      <h1>Dictionary Web App</h1>
+      <div className="searchBox">
+        <input
+          type="text"
+          placeholder="Search..."
+          onChange={(e) => {
+            setSearchWord(e.target.value);
+          }}
+        />
+        <button
+          onClick={() => {
+            getMeaning();
+          }}
         >
-          Learn React
-        </a>
-      </header>
+          <FaSearch size="20px" />
+        </button>
+      </div>
+
+      {data && (
+        <div className="showResults">
+          <h2>
+            {data.word}{" "}
+            <button
+              onClick={() => {
+                playAudio();
+              }}
+            >
+              <FcSpeaker size="26px" />
+            </button>
+          </h2>
+          <h4>Parts of speech:</h4>
+          <p>{data.meanings[0].partOfSpeech}</p>
+          <h4>Definition:</h4>
+          <p>{data.meanings[0].definitions[0].definition}</p>
+          <button
+            onClick={() => {
+              playDefinition(data.meanings[0].definitions[0].definition);
+            }}
+          >
+            <FcSpeaker size="26px" />
+          </button>
+          <h4>Example:</h4>
+          <p>{data.meanings[0].definitions[0].example}</p>
+        </div>
+      )}
     </div>
   );
 }
